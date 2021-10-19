@@ -4,9 +4,10 @@ A general purpose API for all HOPR related operations. Used for our CI/CD pipeli
 ## Endpoints
 ### Faucet
 
-- https://api.hoprnet.org/api/faucet/address/get                        <-- get the address of the faucet
-- https://api.hoprnet.org/api/faucet/xdai/balance/native/get            <-- get the current balance of the faucet
-- https://api.hoprnet.org/api/faucet/xdai/$ethAddress/native/default    <-- funds the $address with 0.1291 xDAI
+- https://api.hoprnet.org/api/faucet/address/get                                <-- get the address of the faucet
+- https://api.hoprnet.org/api/faucet/xdai/balance/native/get                    <-- get the current balance of the faucet
+- https://api.hoprnet.org/api/faucet/xdai/$ethAddress/native/default            <-- funds the $address with 0.1291 xDAI
+- https://api.hoprnet.org/api/faucet/xdai/$ethAddress/$tokenContract/default    <-- funds the $address with 5 $tokenContract
 
 ### Balance
 
