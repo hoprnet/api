@@ -10,12 +10,16 @@ import type { NextApiRequest, NextApiResponse } from 'next'
 
 type CeramicStream = {
   id: string,
-  content: string
+  content: Commit
 }
 
 type CeramicStreamResponse = {
   stream?: CeramicStream
   err?: string
+}
+
+type Commit = {
+  ip: string
 }
 
 const secretKey = Uint8Array.from(
@@ -27,17 +31,15 @@ const client = new CeramicClient('https://ceramic-one.hoprnet.io/');
 
 export default async function handler(
   req: NextApiRequest,
-  res: NextApiResponse<CeramicStreamResponse>
+  res: NextApiResponse<CeramicStreamResponse | string>
 ) {
-  const { method, query: { commit }, body: { secret, ip } } = req;
+  const { method, query: { commit, text } } = req;
 
-  if (secret != process.env.FAUCET_SECRET_API_KEY) return res.status(401).json({ err: 'No secret passed' })
   if (method != 'GET') return res.status(405).json({ err: 'Only GET method allowed' })
 
   try {
 
     if (commit.length != 7 || commit instanceof Array) return res.status(422).json({ err: 'Invalid non-seven characters git commit hash' })
-    if (!isIp(ip)) return res.status(422).json({ err: 'Shared IP is not a valid IPv4 or IPv6 IP' })
     if (!process.env.FAUCET_RPC_PROVIDER) return res.status(501).json({ err: 'No provider defined in server' })
     if (!process.env.FAUCET_SECRET_WALLET_PK) return res.status(501).json({ err: 'No faucet private key defined in server' })
 
@@ -48,12 +50,13 @@ export default async function handler(
     await did.authenticate();
     client.setDID(did);
 
-    const tile = await TileDocument.create(
+    const tile = await TileDocument.create<Commit>(
       client,
       null,
       { deterministic: true, family: address, tags: [commit] },
       { anchor: false, publish: false }
     );
+    if (text) return res.status(200).send(tile.content ? tile.content.ip : '')
     res.status(200).json({ stream: { id: tile.id.toString(), content: tile.content || '' } })
 
   } catch (err: any) {
