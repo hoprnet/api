@@ -1,21 +1,11 @@
 import { providers, Wallet, utils, errors } from 'ethers';
 import type { NextApiRequest, NextApiResponse } from 'next';
-import protocolConfig from '../../../../../protocol-config.json';
+import { DEFAULT_NATIVE_FUNDING_VALUE_IN_ETH } from '../../../../../utils/hopr';
+import { isValidEnvironment, protocolConfig, isValidNetwork } from '../../../../../utils/protocol';
 
 type BalanceDataResponse = {
   hash?: string
   err?: string
-}
-
-type Environment = keyof typeof protocolConfig.environments;
-type Networks = 'hardhat' | 'xdai' | 'goerli'
-
-const isValidEnvironment = (type: string):type is Environment => {
-  return (type in protocolConfig.environments)
-}
-
-const isValidNetwork = (type: string): type is Networks => {
-  return (type in protocolConfig.networks)
 }
 
 export default async function handler(
@@ -41,7 +31,7 @@ export default async function handler(
     if (!process.env.FAUCET_SECRET_WALLET_PK) return res.status(501).json({ err: 'No faucet private key defined in server' })
     const wallet = new Wallet(process.env.FAUCET_SECRET_WALLET_PK, provider);
 
-    const faucetTx = { to: addressToFund, value: utils.parseEther("0.01291") }
+    const faucetTx = { to: addressToFund, value: utils.parseEther(DEFAULT_NATIVE_FUNDING_VALUE_IN_ETH) }
     const tx = await wallet.sendTransaction(faucetTx)
 
     res.status(200).json({ hash: tx.hash })

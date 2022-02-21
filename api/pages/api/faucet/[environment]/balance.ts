@@ -1,22 +1,11 @@
 import { providers, Wallet, utils, errors } from 'ethers';
 import type { NextApiRequest, NextApiResponse } from 'next';
-import protocolConfig from '../../../../protocol-config.json';
+import { isValidEnvironment, protocolConfig, isValidNetwork } from '../../../../utils/protocol';
 
 type BalanceDataResponse = {
   address?: string
   balance?: string
   err?: string
-}
-
-type Environment = keyof typeof protocolConfig.environments;
-type Networks = 'hardhat' | 'xdai' | 'goerli'
-
-const isValidEnvironment = (type: string):type is Environment => {
-  return (type in protocolConfig.environments)
-}
-
-const isValidNetwork = (type: string): type is Networks => {
-  return (type in protocolConfig.networks)
 }
 
 export default async function handler(

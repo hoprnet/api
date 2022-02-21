@@ -1,21 +1,11 @@
 import { providers, Wallet, utils, errors, Contract } from 'ethers';
 import type { NextApiRequest, NextApiResponse } from 'next';
-import protocolConfig from '../../../../../protocol-config.json';
+import { DEFAULT_HOPR_FUNDING_VALUE } from '../../../../../utils/hopr';
+import { isValidEnvironment, protocolConfig, isValidNetwork } from '../../../../../utils/protocol';
 
 type BalanceDataResponse = {
   hash?: string
   err?: string
-}
-
-type Environment = keyof typeof protocolConfig.environments;
-type Networks = 'hardhat' | 'xdai' | 'goerli'
-
-const isValidEnvironment = (type: string):type is Environment => {
-  return (type in protocolConfig.environments)
-}
-
-const isValidNetwork = (type: string): type is Networks => {
-  return (type in protocolConfig.networks)
 }
 
 export default async function handler(
@@ -43,7 +33,7 @@ export default async function handler(
 
     const tokenAddressContract = protocolConfig.environments[actualEnvironment].token_contract_address
     const hoprTokenContract = new Contract(tokenAddressContract, abi, wallet);
-    const tx = await hoprTokenContract.transfer(addressToFund, utils.parseEther("5"));
+    const tx = await hoprTokenContract.transfer(addressToFund, utils.parseEther(DEFAULT_HOPR_FUNDING_VALUE));
 
     res.status(200).json({ hash: tx.hash })
 
