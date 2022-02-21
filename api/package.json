@@ -3,8 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "download:environment": "wget https://raw.githubusercontent.com/hoprnet/hoprnet/master/packages/core/protocol-config.json",
     "dev": "next dev",
-    "build": "next build",
+    "build": "yarn run download:environment && next build",
     "start": "next start",
     "lint": "next lint"
   },
