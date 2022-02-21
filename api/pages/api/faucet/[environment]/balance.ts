@@ -1,9 +1,10 @@
 import { providers, Wallet, utils, errors } from 'ethers';
 import type { NextApiRequest, NextApiResponse } from 'next';
-import protocolConfig from '../../../../../protocol-config.json';
+import protocolConfig from '../../../../protocol-config.json';
 
 type BalanceDataResponse = {
-  hash?: string
+  address?: string
+  balance?: string
   err?: string
 }
 
@@ -22,14 +23,11 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse<BalanceDataResponse>
 ) {
-  const { method, query: { address, environment }, body: { secret } } = req;
+  const { method, query: { environment } } = req;
 
-  if (!process.env.FAUCET_SECRET_API_KEY) return res.status(401).json({ err: 'No secret api token defined in server' })
-  if (secret != process.env.FAUCET_SECRET_API_KEY) return res.status(401).json({ err: 'No secret passed' })
-  if (method != 'POST') return res.status(405).json({ err: 'Only POST method allowed' })
+  if (method != 'GET') return res.status(405).json({ err: 'Only GET method allowed' })
 
   try {
-    const addressToFund = utils.getAddress(address instanceof Array ? address[0] : address)
     const actualEnvironment = environment instanceof Array ? environment[0] : environment
     
     if (!isValidEnvironment(actualEnvironment)) return res.status(501).json({ err: `Environment is invalid, try any of the following: ${Object.keys(protocolConfig.environments)}`})
@@ -40,11 +38,10 @@ export default async function handler(
 
     if (!process.env.FAUCET_SECRET_WALLET_PK) return res.status(501).json({ err: 'No faucet private key defined in server' })
     const wallet = new Wallet(process.env.FAUCET_SECRET_WALLET_PK, provider);
+    const address = await wallet.getAddress();
+    const balance = utils.formatEther(await wallet.getBalance());
 
-    const faucetTx = { to: addressToFund, value: utils.parseEther("0.01291") }
-    const tx = await wallet.sendTransaction(faucetTx)
-
-    res.status(200).json({ hash: tx.hash })
+    res.status(200).json({ address, balance })
 
   } catch (err: any) {
     if (err.code == errors.INVALID_ARGUMENT) return res.status(422).json({ err: 'Address given is incorrect' })

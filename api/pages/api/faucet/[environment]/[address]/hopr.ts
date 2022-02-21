@@ -1,4 +1,4 @@
-import { providers, Wallet, utils, errors } from 'ethers';
+import { providers, Wallet, utils, errors, Contract } from 'ethers';
 import type { NextApiRequest, NextApiResponse } from 'next';
 import protocolConfig from '../../../../../protocol-config.json';
 
@@ -31,7 +31,7 @@ export default async function handler(
   try {
     const addressToFund = utils.getAddress(address instanceof Array ? address[0] : address)
     const actualEnvironment = environment instanceof Array ? environment[0] : environment
-    
+    const abi = ["function transfer(address to, uint amount) returns (bool)"];
     if (!isValidEnvironment(actualEnvironment)) return res.status(501).json({ err: `Environment is invalid, try any of the following: ${Object.keys(protocolConfig.environments)}`})
     const network = protocolConfig.environments[actualEnvironment].network_id;
     
@@ -41,8 +41,9 @@ export default async function handler(
     if (!process.env.FAUCET_SECRET_WALLET_PK) return res.status(501).json({ err: 'No faucet private key defined in server' })
     const wallet = new Wallet(process.env.FAUCET_SECRET_WALLET_PK, provider);
 
-    const faucetTx = { to: addressToFund, value: utils.parseEther("0.01291") }
-    const tx = await wallet.sendTransaction(faucetTx)
+    const tokenAddressContract = protocolConfig.environments[actualEnvironment].token_contract_address
+    const hoprTokenContract = new Contract(tokenAddressContract, abi, wallet);
+    const tx = await hoprTokenContract.transfer(addressToFund, utils.parseEther("5"));
 
     res.status(200).json({ hash: tx.hash })
 
