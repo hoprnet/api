@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "download:environment": "wget https://raw.githubusercontent.com/hoprnet/hoprnet/master/packages/core/protocol-config.json",
+    "download:environment": "npx node-wget https://raw.githubusercontent.com/hoprnet/hoprnet/master/packages/core/protocol-config.json",
     "dev": "next dev",
     "build": "yarn run download:environment && next build",
     "start": "next start",
