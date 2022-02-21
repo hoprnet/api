@@ -2,6 +2,7 @@ import { providers, Wallet, utils, errors, Contract } from 'ethers';
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { DEFAULT_HOPR_FUNDING_VALUE } from '../../../../../utils/hopr';
 import { isValidEnvironment, protocolConfig, isValidNetwork } from '../../../../../utils/protocol';
+import { getLockedTransaction } from '../../../../../utils/wallet';
 
 type BalanceDataResponse = {
   hash?: string
@@ -14,8 +15,9 @@ export default async function handler(
 ) {
   const { method, query: { address, environment }, body: { secret } } = req;
 
+  if (!process.env.FAUCET_REDIS_URL) return res.status(401).json({ err: 'No database to store nonces defined in server.'})
   if (!process.env.FAUCET_SECRET_API_KEY) return res.status(401).json({ err: 'No secret api token defined in server' })
-  if (secret != process.env.FAUCET_SECRET_API_KEY) return res.status(401).json({ err: 'No secret passed' })
+  if (secret != process.env.FAUCET_SECRET_API_KEY) return res.status(401).json({ err: 'Secret passed is incorrect' })
   if (method != 'POST') return res.status(405).json({ err: 'Only POST method allowed' })
 
   try {
@@ -33,7 +35,9 @@ export default async function handler(
 
     const tokenAddressContract = protocolConfig.environments[actualEnvironment].token_contract_address
     const hoprTokenContract = new Contract(tokenAddressContract, abi, wallet);
-    const tx = await hoprTokenContract.transfer(addressToFund, utils.parseEther(DEFAULT_HOPR_FUNDING_VALUE));
+    const faucetTx = await hoprTokenContract.transfer(addressToFund, utils.parseEther(DEFAULT_HOPR_FUNDING_VALUE));
+    const lockedTx = await getLockedTransaction(process.env.FAUCET_REDIS_URL, faucetTx, await wallet.getAddress(), network, provider);
+    const tx = await wallet.sendTransaction(lockedTx)
 
     res.status(200).json({ hash: tx.hash })
 
