@@ -42,6 +42,7 @@ export default async function handler(
     if (text) {
       if (text == 'native') return res.status(200).send(native);
       if (text == 'hopr') return res.status(200).send(hopr);
+      if (text == 'address') return res.status(200).send(address);
     }
     res.status(200).json({ address, balance: { native, hopr } })
 
