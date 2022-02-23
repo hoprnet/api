@@ -11,9 +11,9 @@ type BalanceDataResponse = {
 
 export default async function handler(
   req: NextApiRequest,
-  res: NextApiResponse<BalanceDataResponse>
+  res: NextApiResponse<BalanceDataResponse | string>
 ) {
-  const { method, query: { address, environment }, body: { secret } } = req;
+  const { method, query: { address, environment, text }, body: { secret } } = req;
 
   if (!process.env.FAUCET_REDIS_URL) return res.status(401).json({ err: 'No database to store nonces defined in server.'})
   if (!process.env.FAUCET_SECRET_API_KEY) return res.status(401).json({ err: 'No secret api token defined in server' })
@@ -37,6 +37,7 @@ export default async function handler(
     const lockedTx = await getLockedTransaction(process.env.FAUCET_REDIS_URL, faucetTx, await wallet.getAddress(), network, provider);
     const tx = await wallet.sendTransaction(lockedTx)
 
+    if (text) return res.status(200).send(tx.hash)
     res.status(200).json({ hash: tx.hash })
 
   } catch (err: any) {

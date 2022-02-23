@@ -13,9 +13,9 @@ type BalanceDataResponse = {
 
 export default async function handler(
   req: NextApiRequest,
-  res: NextApiResponse<BalanceDataResponse>
+  res: NextApiResponse<BalanceDataResponse | string>
 ) {
-  const { method, query: { environment } } = req;
+  const { method, query: { environment, text } } = req;
 
   if (method != 'GET') return res.status(405).json({ err: 'Only GET method allowed' })
 
@@ -39,6 +39,10 @@ export default async function handler(
     const native = utils.formatEther(await wallet.getBalance());
     const hopr = utils.formatEther((await hoprTokenContract.balanceOf(address) as BigNumber));
 
+    if (text) {
+      if (text == 'native') return res.status(200).send(native);
+      if (text == 'hopr') return res.status(200).send(hopr);
+    }
     res.status(200).json({ address, balance: { native, hopr } })
 
   } catch (err: any) {
