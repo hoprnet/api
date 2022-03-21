@@ -5,7 +5,7 @@ import { isValidEnvironment, protocolConfig, isValidNetwork } from '../../../../
 import { getLockedTransaction } from '../../../../../utils/wallet';
 
 type BalanceDataResponse = {
-  hash?: string
+  balance?: string
   err?: string
 }
 
@@ -15,13 +15,10 @@ export default async function handler(
 ) {
   const { method, query: { address, environment, text }, body: { secret } } = req;
 
-  if (!process.env.FAUCET_REDIS_URL) return res.status(401).json({ err: 'No database to store nonces defined in server.'})
-  if (!process.env.FAUCET_SECRET_API_KEY) return res.status(401).json({ err: 'No secret api token defined in server' })
-  if (secret != process.env.FAUCET_SECRET_API_KEY) return res.status(401).json({ err: 'Secret passed is incorrect' })
-  if (method != 'POST') return res.status(405).json({ err: 'Only POST method allowed' })
+  if (method != 'GET') return res.status(405).json({ err: 'Only GET method allowed' })
 
   try {
-    const addressToFund = utils.getAddress(address instanceof Array ? address[0] : address)
+    const addressToQuery = utils.getAddress(address instanceof Array ? address[0] : address)
     const actualEnvironment = environment instanceof Array ? environment[0] : environment
 
     if (!isValidEnvironment(actualEnvironment)) return res.status(501).json({ err: `Environment is invalid, try any of the following: ${Object.keys(protocolConfig.environments)}` })
@@ -30,15 +27,10 @@ export default async function handler(
     if (!isValidNetwork(network)) return res.status(501).json({ err: `Environment ${actualEnvironment} has an invalid configurated network (${network}), please ensure the provided network by the environment exists` });
     const provider = new providers.JsonRpcProvider(protocolConfig.networks[network].default_provider)
 
-    if (!process.env.FAUCET_SECRET_WALLET_PK) return res.status(501).json({ err: 'No faucet private key defined in server' })
-    const wallet = new Wallet(process.env.FAUCET_SECRET_WALLET_PK, provider);
+    const balance = utils.formatEther(await provider.getBalance(addressToQuery))
 
-    const faucetTx = { to: addressToFund, value: utils.parseEther(DEFAULT_NATIVE_FUNDING_VALUE_IN_ETH) }
-    const lockedTx = await getLockedTransaction(process.env.FAUCET_REDIS_URL, faucetTx, await wallet.getAddress(), network, provider);
-    const tx = await wallet.sendTransaction(lockedTx)
-
-    if (text) return res.status(200).send(tx.hash)
-    res.status(200).json({ hash: tx.hash })
+    if (text) return res.status(200).send(balance)
+    res.status(200).json({ balance })
 
   } catch (err: any) {
     if (err.code == errors.INVALID_ARGUMENT) return res.status(422).json({ err: 'Address given is incorrect' })
