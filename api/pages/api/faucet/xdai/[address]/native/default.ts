@@ -1,5 +1,6 @@
 import { providers, Wallet, utils, errors } from 'ethers';
 import type { NextApiRequest, NextApiResponse } from 'next'
+import { DEFAULT_NATIVE_FUNDING_VALUE_IN_ETH } from '../../../../../../utils/hopr'
 
 type BalanceDataResponse = {
   hash?: string
@@ -25,7 +26,7 @@ export default async function handler(
     const provider = new providers.JsonRpcProvider(process.env.FAUCET_RPC_PROVIDER);
     const wallet = new Wallet(process.env.FAUCET_SECRET_WALLET_PK, provider);
 
-    const faucetTx = { to: addressToFund, value: utils.parseEther("0.01291") }
+    const faucetTx = { to: addressToFund, value: utils.parseEther(DEFAULT_NATIVE_FUNDING_VALUE_IN_ETH) }
     const tx = await wallet.sendTransaction(faucetTx)
 
     res.status(200).json({ hash: tx.hash })
