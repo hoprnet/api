@@ -26,17 +26,19 @@ export default async function handler(
     const abi = ["function transfer(address to, uint amount) returns (bool)"];
     if (!isValidEnvironment(actualEnvironment)) return res.status(501).json({ err: `Environment is invalid, try any of the following: ${Object.keys(protocolConfig.environments)}`})
     const network = protocolConfig.environments[actualEnvironment].network_id;
-    
+
     if (!isValidNetwork(network)) return res.status(501).json({ err: `Environment ${actualEnvironment} has an invalid configurated network (${network}), please ensure the provided network by the environment exists`});
     const provider = new providers.JsonRpcProvider(protocolConfig.networks[network].default_provider)
 
     if (!process.env.FAUCET_SECRET_WALLET_PK) return res.status(501).json({ err: 'No faucet private key defined in server' })
     const wallet = new Wallet(process.env.FAUCET_SECRET_WALLET_PK, provider);
+    const walletAddress = await wallet.getAddress()
 
     const tokenAddressContract = protocolConfig.environments[actualEnvironment].token_contract_address
     const hoprTokenContract = new Contract(tokenAddressContract, abi, wallet);
-    const faucetTx = await hoprTokenContract.transfer(addressToFund, utils.parseEther(DEFAULT_HOPR_FUNDING_VALUE));
-    const lockedTx = await getLockedTransaction(process.env.FAUCET_REDIS_URL, faucetTx, await wallet.getAddress(), network, provider);
+
+    const faucetTx = await hoprTokenContract.populateTransaction.transfer(addressToFund, utils.parseEther(DEFAULT_HOPR_FUNDING_VALUE));
+    const lockedTx = await getLockedTransaction(process.env.FAUCET_REDIS_URL, faucetTx, walletAddress, network, provider);
     const tx = await wallet.sendTransaction(lockedTx)
 
     if (text) return res.status(200).send(tx.hash)

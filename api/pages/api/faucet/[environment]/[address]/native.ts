@@ -32,9 +32,10 @@ export default async function handler(
 
     if (!process.env.FAUCET_SECRET_WALLET_PK) return res.status(501).json({ err: 'No faucet private key defined in server' })
     const wallet = new Wallet(process.env.FAUCET_SECRET_WALLET_PK, provider);
+    const walletAddress = await wallet.getAddress()
 
     const faucetTx = { to: addressToFund, value: utils.parseEther(DEFAULT_NATIVE_FUNDING_VALUE_IN_ETH) }
-    const lockedTx = await getLockedTransaction(process.env.FAUCET_REDIS_URL, faucetTx, await wallet.getAddress(), network, provider);
+    const lockedTx = await getLockedTransaction(process.env.FAUCET_REDIS_URL, faucetTx, walletAddress, network, provider);
     const tx = await wallet.sendTransaction(lockedTx)
 
     if (text) return res.status(200).send(tx.hash)
