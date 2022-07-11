@@ -12,7 +12,11 @@ export const getLockedTransaction = async (
     const key = `${address}-${network}`
     const storedNonce = await client.get(key)
     const currentTransactions = await provider.getTransactionCount(address, "latest");
-    const nonce = storedNonce ? +storedNonce : currentTransactions;
+    // if nonce is outdated or unset we use the nr of txs as the base
+    let nonce = currentTransactions
+    if (!!+storedNonce && nonce < storedNonce) {
+        nonce = storedNonce
+    }
     const noncedTransaction = { nonce, ...transaction  }
     await client.set(key, nonce + 1);
     return noncedTransaction;

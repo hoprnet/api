@@ -3,7 +3,6 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { DEFAULT_HOPR_FUNDING_VALUE } from '../../../../../utils/hopr';
 import { isValidEnvironment, protocolConfig, isValidNetwork } from '../../../../../utils/protocol';
 import { getLockedTransaction } from '../../../../../utils/wallet';
-import { getGasParams } from '../../../../../utils/gas';
 
 type BalanceDataResponse = {
   hash?: string
@@ -39,9 +38,7 @@ export default async function handler(
     const tokenAddressContract = protocolConfig.environments[actualEnvironment].token_contract_address
     const hoprTokenContract = new Contract(tokenAddressContract, abi, wallet);
 
-    const gasParams = getGasParams(networkConfig)
-
-    const faucetTx = await hoprTokenContract.populateTransaction.transfer(addressToFund, utils.parseEther(DEFAULT_HOPR_FUNDING_VALUE), gasParams);
+    const faucetTx = await hoprTokenContract.populateTransaction.transfer(addressToFund, utils.parseEther(DEFAULT_HOPR_FUNDING_VALUE));
     const lockedTx = await getLockedTransaction(process.env.FAUCET_REDIS_URL, faucetTx, walletAddress, network, provider);
     const tx = await wallet.sendTransaction(lockedTx)
     const txConfirmed = await tx.wait()
@@ -50,6 +47,11 @@ export default async function handler(
     res.status(200).json({ hash: txConfirmed.transactionHash })
 
   } catch (err: any) {
-    if (err.code == errors.INVALID_ARGUMENT) return res.status(422).json({ err: 'Address given is incorrect' })
+    if (err.code == errors.INVALID_ARGUMENT) {
+    return res.status(422).json({ err: 'Address given is incorrect' })
+    }
+    console.log(err)
+    return res.status(500).json({ err: 'Unhandled error occurred'})
+
   }
 }

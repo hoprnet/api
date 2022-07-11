@@ -3,7 +3,6 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { DEFAULT_NATIVE_FUNDING_VALUE_IN_ETH } from '../../../../../utils/hopr';
 import { isValidEnvironment, protocolConfig, isValidNetwork } from '../../../../../utils/protocol';
 import { getLockedTransaction } from '../../../../../utils/wallet';
-import { getGasParams } from '../../../../../utils/gas';
 
 type BalanceDataResponse = {
   hash?: string
@@ -30,15 +29,13 @@ export default async function handler(
     if (!isValidNetwork(network)) return res.status(501).json({ err: `Environment ${actualEnvironment} has an invalid configurated network (${network}), please ensure the provided network by the environment exists` });
 
     const networkConfig = protocolConfig.networks[network]
-    const provider = new providers.JsonRpcProvider(networkConfig.default_provider)
+    const provider = new providers.JsonRpcProvider("https://goerli.infura.io/v3/9aa3d95b3bc440fa88ea12eaa4456161")
 
     if (!process.env.FAUCET_SECRET_WALLET_PK) return res.status(501).json({ err: 'No faucet private key defined in server' })
     const wallet = new Wallet(process.env.FAUCET_SECRET_WALLET_PK, provider);
     const walletAddress = await wallet.getAddress()
 
-    const gasParams = getGasParams(networkConfig)
-
-    const faucetTx = { to: addressToFund, value: utils.parseEther(DEFAULT_NATIVE_FUNDING_VALUE_IN_ETH), ...gasParams }
+    const faucetTx = { to: addressToFund, value: utils.parseEther(DEFAULT_NATIVE_FUNDING_VALUE_IN_ETH) }
     const lockedTx = await getLockedTransaction(process.env.FAUCET_REDIS_URL, faucetTx, walletAddress, network, provider);
     const tx = await wallet.sendTransaction(lockedTx)
     const txConfirmed = await tx.wait()
@@ -47,6 +44,10 @@ export default async function handler(
     res.status(200).json({ hash: txConfirmed.transactionHash })
 
   } catch (err: any) {
-    if (err.code == errors.INVALID_ARGUMENT) return res.status(422).json({ err: 'Address given is incorrect' })
+    if (err.code == errors.INVALID_ARGUMENT) {
+    return res.status(422).json({ err: 'Address given is incorrect' })
+    }
+    console.log(err)
+    return res.status(500).json({ err: 'Unhandled error occurred'})
   }
 }
