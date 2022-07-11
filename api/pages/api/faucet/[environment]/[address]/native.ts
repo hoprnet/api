@@ -37,9 +37,10 @@ export default async function handler(
     const faucetTx = { to: addressToFund, value: utils.parseEther(DEFAULT_NATIVE_FUNDING_VALUE_IN_ETH) }
     const lockedTx = await getLockedTransaction(process.env.FAUCET_REDIS_URL, faucetTx, walletAddress, network, provider);
     const tx = await wallet.sendTransaction(lockedTx)
+    const txConfirmed = await tx.wait()
 
-    if (text) return res.status(200).send(tx.hash)
-    res.status(200).json({ hash: tx.hash })
+    if (text) return res.status(200).send(txConfirmed.transactionHash)
+    res.status(200).json({ hash: txConfirmed.transactionHash })
 
   } catch (err: any) {
     if (err.code == errors.INVALID_ARGUMENT) return res.status(422).json({ err: 'Address given is incorrect' })
