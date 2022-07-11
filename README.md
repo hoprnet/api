@@ -18,8 +18,3 @@ A general purpose API for all HOPR related operations. Used for our CI/CD pipeli
 
 - https://api.hoprnet.org/api/validate/$address/get                     <-- validate whether $address is a valid $ethAddress
 - https://api.hoprnet.org/api/validate/$address/get?text=true           <-- validate whether $address is a valid $ethAddress (plain text)
-
-### Ceramic
-
-- https://api.hoprnet.org/api/ceramic/ip/$commit/get    <-- get the ip of a given git commit if at all
-- https://api.hoprnet.org/api/ceramic/ip/$commit/post   <-- post the ip + secret for a given commit
