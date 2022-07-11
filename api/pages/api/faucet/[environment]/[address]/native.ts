@@ -3,6 +3,7 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { DEFAULT_NATIVE_FUNDING_VALUE_IN_ETH } from '../../../../../utils/hopr';
 import { isValidEnvironment, protocolConfig, isValidNetwork } from '../../../../../utils/protocol';
 import { getLockedTransaction } from '../../../../../utils/wallet';
+import { getGasParams } from '../../../../../utils/gas';
 
 type BalanceDataResponse = {
   hash?: string
@@ -35,10 +36,7 @@ export default async function handler(
     const wallet = new Wallet(process.env.FAUCET_SECRET_WALLET_PK, provider);
     const walletAddress = await wallet.getAddress()
 
-    const gasParams = {
-      maxFeePerGas: networkConfig.max_fee_per_gas,
-      maxPriorityFeePerGas: networkConfig.max_priority_fee_per_gas,
-    }
+    const gasParams = getGasParams(networkConfig)
 
     const faucetTx = { to: addressToFund, value: utils.parseEther(DEFAULT_NATIVE_FUNDING_VALUE_IN_ETH), ...gasParams }
     const lockedTx = await getLockedTransaction(process.env.FAUCET_REDIS_URL, faucetTx, walletAddress, network, provider);

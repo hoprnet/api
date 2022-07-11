@@ -3,6 +3,7 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { DEFAULT_HOPR_FUNDING_VALUE } from '../../../../../utils/hopr';
 import { isValidEnvironment, protocolConfig, isValidNetwork } from '../../../../../utils/protocol';
 import { getLockedTransaction } from '../../../../../utils/wallet';
+import { getGasParams } from '../../../../../utils/gas';
 
 type BalanceDataResponse = {
   hash?: string
@@ -38,10 +39,7 @@ export default async function handler(
     const tokenAddressContract = protocolConfig.environments[actualEnvironment].token_contract_address
     const hoprTokenContract = new Contract(tokenAddressContract, abi, wallet);
 
-    const gasParams = {
-      maxFeePerGas: networkConfig.max_fee_per_gas,
-      maxPriorityFeePerGas: networkConfig.max_priority_fee_per_gas,
-    }
+    const gasParams = getGasParams(networkConfig)
 
     const faucetTx = await hoprTokenContract.populateTransaction.transfer(addressToFund, utils.parseEther(DEFAULT_HOPR_FUNDING_VALUE), gasParams);
     const lockedTx = await getLockedTransaction(process.env.FAUCET_REDIS_URL, faucetTx, walletAddress, network, provider);
