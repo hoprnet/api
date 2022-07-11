@@ -8,18 +8,30 @@ function gasToNumber(gas: string) {
   if (parsedGas.length > 1) {
     gasInteger = ethers.utils.parseUnits(parsedGas[0], parsedGas[1]).toString();
   } else {
-    gasInteger = parsedGasPrice[0];
+    gasInteger = parsedGas[0];
   }
 
   return gasInteger;
 }
 
+type GasInput = {
+  hardhat_deploy_gas_price?: string;
+  max_fee_per_gas?: string;
+  max_priority_fee_per_gas?: string;
+};
+
+type GasParams = {
+  gasPrice?: string;
+  maxFeePerGas?: string;
+  maxPriorityFeePerGas?: string;
+};
+
 export function getGasParams({
-  hardhat_deploy_gas_price: string,
-  max_fee_per_gas: string,
-  max_priority_fee_per_gas: string,
-}) {
-  const params = {};
+  hardhat_deploy_gas_price,
+  max_fee_per_gas,
+  max_priority_fee_per_gas,
+}: GasInput) {
+  const params: GasParams = {};
 
   if (hardhat_deploy_gas_price) {
     params.gasPrice = gasToNumber(hardhat_deploy_gas_price);
