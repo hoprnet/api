@@ -6,7 +6,10 @@ import {
   protocolConfig,
   isValidNetwork,
 } from "../../../../../utils/protocol";
-import { getLockedTransaction } from "../../../../../utils/wallet";
+import {
+  getLockedTransaction,
+  performTransaction,
+} from "../../../../../utils/wallet";
 
 type BalanceDataResponse = {
   hash?: string;
@@ -44,24 +47,20 @@ export default async function handler(
       environment instanceof Array ? environment[0] : environment;
 
     if (!isValidEnvironment(actualEnvironment))
-      return res
-        .status(501)
-        .json({
-          err: `Environment is invalid, try any of the following: ${Object.keys(
-            protocolConfig.environments
-          )}`,
-        });
+      return res.status(501).json({
+        err: `Environment is invalid, try any of the following: ${Object.keys(
+          protocolConfig.environments
+        )}`,
+      });
     const network = protocolConfig.environments[actualEnvironment].network_id;
     if (!isValidNetwork(network))
-      return res
-        .status(501)
-        .json({
-          err: `Environment ${actualEnvironment} has an invalid configurated network (${network}), please ensure the provided network by the environment exists`,
-        });
+      return res.status(501).json({
+        err: `Environment ${actualEnvironment} has an invalid configurated network (${network}), please ensure the provided network by the environment exists`,
+      });
 
     const networkConfig = protocolConfig.networks[network];
     const provider = new providers.JsonRpcProvider(
-      "https://goerli.infura.io/v3/9aa3d95b3bc440fa88ea12eaa4456161"
+      networkConfig.default_provider
     );
 
     if (!process.env.FAUCET_SECRET_WALLET_PK)
@@ -82,8 +81,7 @@ export default async function handler(
       network,
       provider
     );
-    const tx = await wallet.sendTransaction(lockedTx);
-    const txConfirmed = await tx.wait();
+    const txConfirmed = await performTransaction(wallet, lockedTx, 3);
 
     if (text) return res.status(200).send(txConfirmed.transactionHash);
     res.status(200).json({ hash: txConfirmed.transactionHash });
