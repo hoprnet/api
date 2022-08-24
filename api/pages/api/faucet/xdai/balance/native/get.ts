@@ -1,24 +1,20 @@
-import { ethers } from "ethers";
-import type { NextApiRequest, NextApiResponse } from "next";
+import { ethers } from 'ethers'
+import type { NextApiRequest, NextApiResponse } from 'next'
 
-import { getWallet } from "../../../../../../utils/wallet";
+import { getWallet } from '../../../../../../utils/wallet'
 
 type BalanceDataResponse = {
-  balance?: string;
-  err?: string;
-};
+  balance?: string
+  err?: string
+}
 
-export default async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse<BalanceDataResponse>
-) {
-  const { method } = req;
+export default async function handler(req: NextApiRequest, res: NextApiResponse<BalanceDataResponse>) {
+  const { method } = req
 
-  if (method != "GET")
-    return res.status(405).json({ err: "Only GET method allowed" });
+  if (method != 'GET') return res.status(405).json({ err: 'Only GET method allowed' })
 
-  const { wallet } = getWallet();
-  const balance = ethers.utils.formatEther(await wallet.getBalance());
+  const { wallet } = getWallet()
+  const balance = ethers.utils.formatEther(await wallet.getBalance())
 
-  return res.status(200).json({ balance });
+  return res.status(200).json({ balance })
 }
