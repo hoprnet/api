@@ -7,6 +7,45 @@ import type {
   TransactionReceipt,
 } from "@ethersproject/abstract-provider";
 
+import {
+  isValidEnvironment,
+  protocolConfig,
+  isValidNetwork,
+} from "./protocol";
+
+const {FAUCET_REDIS_URL, FAUCET_RPC_PROVIDER, FAUCET_SECRET_WALLET_PK} = process.env;
+
+export function getWallet(environment?: string | string[]): {
+  let providerUrl = FAUCET_RPC_PROVIDER;
+  let environmentConfig;
+  let hoprTokenContract;
+
+  if (environment) {
+    const actualEnvironment =
+      environment instanceof Array ? environment[0] : environment;
+    environmentConfig = protocolConfig.environments[actualEnvironment];
+    const network = environmentConfig.network_id;
+
+    if (!isValidNetwork(network)) {
+      throw new Error("invalid environment");
+    }
+
+    const networkConfig = protocolConfig.networks[network];
+    providerUrl = networkConfig.default_provider;
+  }
+
+  const provider = new providers.StaticJsonRpcProvider(providerUrl);
+  const wallet = new Wallet(FAUCET_SECRET_WALLET_PK, provider);
+
+  if (environmentConfig) {
+    const tokenAddressContract = environmentConfig.token_contract_address;
+    const abi = ["function transfer(address to, uint amount) returns (bool)"];
+    hoprTokenContract = new Contract(tokenAddressContract, abi, wallet);
+  }
+
+  return { wallet, hoprTokenContract, provider };
+}
+
 export async function performTransaction(
   wallet: Signer,
   lockedTx: TransactionRequest,
@@ -40,13 +79,13 @@ export async function performTransaction(
 }
 
 export const getLockedTransaction = async (
-  redisUrl: string,
   transaction: providers.TransactionRequest,
-  address: string,
+  wallet: string,
   network: string,
-  provider: providers.JsonRpcProvider
+  provider: providers.StaticJsonRpcProvider
 ) => {
-  const client = new Redis(redisUrl);
+  const client = new Redis(FAUCET_REDIS_URL);
+  const address = await wallet.getAddress();
   const key = `${address}-${network}`;
   const storedNonce = await client.get(key);
   const chainNonce = await provider.getTransactionCount(address, "latest");
