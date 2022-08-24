@@ -1,6 +1,8 @@
 import { ethers } from "ethers";
 import type { NextApiRequest, NextApiResponse } from "next";
 
+import { getWallet } from "../../../../../../utils/wallet";
+
 type BalanceDataResponse = {
   balance?: string;
   err?: string;

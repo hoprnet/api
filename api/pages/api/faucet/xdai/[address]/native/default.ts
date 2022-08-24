@@ -1,7 +1,8 @@
 import { providers, Wallet, utils, errors } from "ethers";
 import type { NextApiRequest, NextApiResponse } from "next";
 import { DEFAULT_NATIVE_FUNDING_VALUE_IN_ETH } from "../../../../../../utils/hopr";
-import { getWallet } from "../../../../../../utils/wallet";
+
+import { getAddress, getWallet } from "../../../../../../utils/wallet";
 
 type BalanceDataResponse = {
   hash?: string;
@@ -15,7 +16,6 @@ export default async function handler(
   const {
     method,
     query: { address },
-    body: { secret },
   } = req;
 
   if (method != "POST")
@@ -23,9 +23,7 @@ export default async function handler(
 
   try {
     const { wallet } = getWallet();
-    const addressToFund = utils.getAddress(
-      address instanceof Array ? address[0] : address
-    );
+    const addressToFund = getAddress(address);
 
     const faucetTx = {
       to: addressToFund,

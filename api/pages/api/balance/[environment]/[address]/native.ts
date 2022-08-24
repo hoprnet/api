@@ -1,7 +1,11 @@
 import { providers, Wallet, utils, errors } from "ethers";
 import type { NextApiRequest, NextApiResponse } from "next";
 import { DEFAULT_NATIVE_FUNDING_VALUE_IN_ETH } from "../../../../../utils/hopr";
-import { getWallet, getLockedTransaction } from "../../../../../utils/wallet";
+import {
+  getAddress,
+  getWallet,
+  getLockedTransaction,
+} from "../../../../../utils/wallet";
 
 type BalanceDataResponse = {
   balance?: string;
@@ -14,20 +18,18 @@ export default async function handler(
 ) {
   const {
     method,
-    query: { address, environment, text }
+    query: { address, environment, text },
   } = req;
 
   if (method != "GET")
     return res.status(405).json({ err: "Only GET method allowed" });
 
   try {
-    const { provider } = getWallet(environment);
-    const addressToQuery = utils.getAddress(
-      address instanceof Array ? address[0] : address
-    );
+    const { wallet } = getWallet(environment);
+    const addressToQuery = getAddress(address);
 
     const balance = utils.formatEther(
-      await provider.getBalance(addressToQuery)
+      await wallet.provider.getBalance(addressToQuery)
     );
 
     if (text) return res.status(200).send(balance);

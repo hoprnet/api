@@ -1,4 +1,4 @@
-import { providers, errors, BigNumber } from "ethers";
+import { providers, errors, utils, BigNumber, Wallet, Contract } from "ethers";
 import Redis from "ioredis";
 
 import type { Signer } from "@ethersproject/abstract-signer";
@@ -9,13 +9,24 @@ import type {
 
 import {
   isValidEnvironment,
-  protocolConfig,
   isValidNetwork,
+  getEnvironment,
+  getNetwork,
 } from "./protocol";
 
-const {FAUCET_REDIS_URL, FAUCET_RPC_PROVIDER, FAUCET_SECRET_WALLET_PK} = process.env;
+const { FAUCET_REDIS_URL, FAUCET_RPC_PROVIDER, FAUCET_SECRET_WALLET_PK } =
+  process.env;
 
-export function getWallet(environment?: string | string[]): {
+export function getAddress(address?: string | string[]) {
+  if (address) {
+    const actualAddress = address instanceof Array ? address[0] : address;
+    const addressToFund = utils.getAddress(actualAddress);
+    return addressToFund;
+  }
+  throw new Error("Missing parameter 'address'");
+}
+
+export function getWallet(environment?: string | string[]) {
   let providerUrl = FAUCET_RPC_PROVIDER;
   let environmentConfig;
   let hoprTokenContract;
@@ -23,27 +34,30 @@ export function getWallet(environment?: string | string[]): {
   if (environment) {
     const actualEnvironment =
       environment instanceof Array ? environment[0] : environment;
-    environmentConfig = protocolConfig.environments[actualEnvironment];
+    environmentConfig = getEnvironment(actualEnvironment);
     const network = environmentConfig.network_id;
 
     if (!isValidNetwork(network)) {
       throw new Error("invalid environment");
     }
 
-    const networkConfig = protocolConfig.networks[network];
+    const networkConfig = getNetwork(network);
     providerUrl = networkConfig.default_provider;
   }
 
   const provider = new providers.StaticJsonRpcProvider(providerUrl);
-  const wallet = new Wallet(FAUCET_SECRET_WALLET_PK, provider);
+  const wallet = new Wallet(FAUCET_SECRET_WALLET_PK as string, provider);
 
   if (environmentConfig) {
     const tokenAddressContract = environmentConfig.token_contract_address;
-    const abi = ["function transfer(address to, uint amount) returns (bool)"];
+    const abi = [
+      "function transfer(address to, uint amount) returns (bool)",
+      "function balanceOf(address) view returns (uint)",
+    ];
     hoprTokenContract = new Contract(tokenAddressContract, abi, wallet);
   }
 
-  return { wallet, hoprTokenContract, provider };
+  return { wallet, hoprTokenContract };
 }
 
 export async function performTransaction(
@@ -79,24 +93,33 @@ export async function performTransaction(
 }
 
 export const getLockedTransaction = async (
-  transaction: providers.TransactionRequest,
-  wallet: string,
-  network: string,
-  provider: providers.StaticJsonRpcProvider
+  transaction: providers.TransactionRequest | undefined,
+  wallet: Signer
 ) => {
-  const client = new Redis(FAUCET_REDIS_URL);
+  if (!transaction) {
+    throw new Error("no transaction given");
+  }
+  const client = new Redis(FAUCET_REDIS_URL as string);
   const address = await wallet.getAddress();
-  const key = `${address}-${network}`;
+  const network = await wallet.provider?.getNetwork();
+  const key = `${address}-${network?.name}`;
   const storedNonce = await client.get(key);
-  const chainNonce = await provider.getTransactionCount(address, "latest");
+  const chainNonce = await wallet.provider?.getTransactionCount(
+    address,
+    "latest"
+  );
   let nonce;
-  if (storedNonce === null) {
+  if (chainNonce && storedNonce === null) {
     // initialize nonce once from the chain
     nonce = chainNonce;
   } else {
     // ensure our stored nonce is up-to-date, if not overwrite it
-    nonce = +storedNonce;
-    if (nonce < chainNonce) {
+    if (storedNonce === null) {
+      nonce = 0;
+    } else {
+      nonce = +storedNonce;
+    }
+    if (chainNonce && nonce < chainNonce) {
       // this is only happening in cases were txs are performed outside of
       // this API
       nonce = chainNonce;

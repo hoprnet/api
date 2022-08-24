@@ -2,11 +2,7 @@ import { providers, Wallet, utils, errors } from "ethers";
 import type { NextApiRequest, NextApiResponse } from "next";
 import { DEFAULT_NATIVE_FUNDING_VALUE_IN_ETH } from "../../../../../utils/hopr";
 import {
-  isValidEnvironment,
-  protocolConfig,
-  isValidNetwork,
-} from "../../../../../utils/protocol";
-import {
+  getAddress,
   getWallet,
   getLockedTransaction,
   performTransaction,
@@ -24,7 +20,6 @@ export default async function handler(
   const {
     method,
     query: { address, environment, text },
-    body: { secret },
   } = req;
 
   if (method != "POST")
@@ -32,20 +27,13 @@ export default async function handler(
 
   try {
     const { wallet, hoprTokenContract } = getWallet(environment);
-    const addressToFund = utils.getAddress(
-      address instanceof Array ? address[0] : address
-    );
+    const addressToFund = getAddress(address);
 
     const faucetTx = {
       to: addressToFund,
       value: utils.parseEther(DEFAULT_NATIVE_FUNDING_VALUE_IN_ETH),
     };
-    const lockedTx = await getLockedTransaction(
-      faucetTx,
-      wallet,
-      network,
-      provider
-    );
+    const lockedTx = await getLockedTransaction(faucetTx, wallet);
     const txConfirmed = await performTransaction(wallet, lockedTx, 3);
 
     if (text) return res.status(200).send(txConfirmed.transactionHash);

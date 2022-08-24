@@ -1,6 +1,8 @@
 import { utils } from "ethers";
 import type { NextApiRequest, NextApiResponse } from "next";
 
+import { getAddress } from "../../../../utils/wallet";
+
 type BalanceDataResponse = {
   isValid?: boolean;
   err?: string;
@@ -19,7 +21,7 @@ export default async function handler(
     return res.status(405).json({ err: "Only GET method allowed" });
 
   try {
-    utils.getAddress(address instanceof Array ? address[0] : address);
+    getAddress(address);
     if (text) return res.status(200).send(true);
     return res.status(200).json({ isValid: true });
   } catch (err: any) {
