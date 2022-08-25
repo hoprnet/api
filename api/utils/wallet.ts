@@ -59,6 +59,7 @@ export async function performTransaction(
   let end
   let timeElapsed
   try {
+    console.log("Sending tx")
     const tx = await wallet.sendTransaction(lockedTx)
     end = Date.now()
     timeElapsed = end - start
@@ -97,6 +98,7 @@ export const getLockedTransaction = async (transaction: providers.TransactionReq
   if (!transaction) {
     throw new Error('no transaction given')
   }
+  console.log("Acquiring locked tx")
   const start = Date.now()
   const client = new Redis(FAUCET_REDIS_URL as string)
   const address = await wallet.getAddress()
