@@ -59,7 +59,7 @@ export async function performTransaction(
   let end
   let timeElapsed
   try {
-    console.log("Sending tx")
+    console.log(`Sending tx with nonce ${lockedTx.nonce}`)
     const tx = await wallet.sendTransaction(lockedTx)
     end = Date.now()
     timeElapsed = end - start
@@ -69,7 +69,7 @@ export async function performTransaction(
     const txConfirmed = await tx.wait()
     end = Date.now()
     timeElapsed = end - start
-    console.log(`Confirmed tx on-chain in ${timeElapsed}ms`)
+    console.log(`Confirmed tx on-chain as ${txConfirmed.transactionHash} in ${timeElapsed}ms`)
 
     return txConfirmed
   } catch (err: any) {
@@ -98,7 +98,7 @@ export const getLockedTransaction = async (transaction: providers.TransactionReq
   if (!transaction) {
     throw new Error('no transaction given')
   }
-  console.log("Acquiring locked tx")
+  console.log('Acquiring locked tx')
   const start = Date.now()
   const client = new Redis(FAUCET_REDIS_URL as string)
   const address = await wallet.getAddress()
@@ -117,9 +117,9 @@ export const getLockedTransaction = async (transaction: providers.TransactionReq
     } else {
       nonce = +storedNonce
     }
-    if (chainNonce && nonce < chainNonce) {
+    if (chainNonce && nonce != chainNonce) {
       // this is only happening in cases were txs are performed outside of
-      // this API
+      // this API or unhandled errors occurred
       nonce = chainNonce
     }
   }
@@ -128,6 +128,6 @@ export const getLockedTransaction = async (transaction: providers.TransactionReq
   await client.set(key, nonce + 1)
   const end = Date.now()
   const timeElapsed = end - start
-  console.log(`Acquired locked tx in ${timeElapsed}ms`)
+  console.log(`Acquired locked tx with nonce ${nonce} in ${timeElapsed}ms`)
   return noncedTransaction
 }
