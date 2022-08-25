@@ -1,37 +1,33 @@
-import { providers, Wallet, utils, errors } from 'ethers';
-import type { NextApiRequest, NextApiResponse } from 'next';
-import { DEFAULT_NATIVE_FUNDING_VALUE_IN_ETH } from '../../../../../utils/hopr';
-import { isValidEnvironment, protocolConfig, isValidNetwork } from '../../../../../utils/protocol';
-import { getLockedTransaction } from '../../../../../utils/wallet';
+import { providers, Wallet, utils, errors } from 'ethers'
+import type { NextApiRequest, NextApiResponse } from 'next'
+import { DEFAULT_NATIVE_FUNDING_VALUE_IN_ETH } from '../../../../../utils/hopr'
+import { getAddress, getWallet, getLockedTransaction } from '../../../../../utils/wallet'
 
 type BalanceDataResponse = {
   balance?: string
   err?: string
 }
 
-export default async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse<BalanceDataResponse | string>
-) {
-  const { method, query: { address, environment, text }, body: { secret } } = req;
+export default async function handler(req: NextApiRequest, res: NextApiResponse<BalanceDataResponse | string>) {
+  const {
+    method,
+    query: { address, environment, text }
+  } = req
 
   if (method != 'GET') return res.status(405).json({ err: 'Only GET method allowed' })
 
   try {
-    const addressToQuery = utils.getAddress(address instanceof Array ? address[0] : address)
-    const actualEnvironment = environment instanceof Array ? environment[0] : environment
+    const { wallet } = getWallet(environment)
+    const addressToQuery = getAddress(address)
 
-    if (!isValidEnvironment(actualEnvironment)) return res.status(501).json({ err: `Environment is invalid, try any of the following: ${Object.keys(protocolConfig.environments)}` })
-    const network = protocolConfig.environments[actualEnvironment].network_id;
-
-    if (!isValidNetwork(network)) return res.status(501).json({ err: `Environment ${actualEnvironment} has an invalid configurated network (${network}), please ensure the provided network by the environment exists` });
-    const provider = new providers.JsonRpcProvider(protocolConfig.networks[network].default_provider)
-
-    const balance = utils.formatEther(await provider.getBalance(addressToQuery))
+    const start = Date.now()
+    const balance = utils.formatEther(await wallet.provider.getBalance(addressToQuery))
+    const end = Date.now()
+    const timeElapsed = end - start
+    console.log(`Fetched native balance for ${addressToQuery} in ${timeElapsed}ms`)
 
     if (text) return res.status(200).send(balance)
-    res.status(200).json({ balance })
-
+    return res.status(200).json({ balance })
   } catch (err: any) {
     if (err.code == errors.INVALID_ARGUMENT) return res.status(422).json({ err: 'Address given is incorrect' })
   }
