@@ -55,11 +55,26 @@ export async function performTransaction(
   lockedTx: TransactionRequest,
   retries: number
 ): Promise<TransactionReceipt> {
+  let start = Date.now()
+  let end
+  let timeElapsed
   try {
     const tx = await wallet.sendTransaction(lockedTx)
+    end = Date.now()
+    timeElapsed = end - start
+    console.log(`Sent tx in ${timeElapsed}ms`)
+
+    start = end
     const txConfirmed = await tx.wait()
+    end = Date.now()
+    timeElapsed = end - start
+    console.log(`Confirmed tx on-chain in ${timeElapsed}ms`)
+
     return txConfirmed
   } catch (err: any) {
+    end = Date.now()
+    timeElapsed = end - start
+    console.log(`Failed to execute tx after ${timeElapsed}ms`)
     if ((err.code == errors.REPLACEMENT_UNDERPRICED || err.code == errors.NETWORK_ERROR) && retries > 0) {
       // increase fees to improve chances of success on the retry
       let maxFeePerGas = lockedTx.maxFeePerGas
@@ -82,6 +97,7 @@ export const getLockedTransaction = async (transaction: providers.TransactionReq
   if (!transaction) {
     throw new Error('no transaction given')
   }
+  const start = Date.now()
   const client = new Redis(FAUCET_REDIS_URL as string)
   const address = await wallet.getAddress()
   const network = await wallet.provider?.getNetwork()
@@ -108,5 +124,8 @@ export const getLockedTransaction = async (transaction: providers.TransactionReq
 
   const noncedTransaction = { nonce, ...transaction }
   await client.set(key, nonce + 1)
+  const end = Date.now()
+  const timeElapsed = end - start
+  console.log(`Acquired locked tx in ${timeElapsed}ms`)
   return noncedTransaction
 }
