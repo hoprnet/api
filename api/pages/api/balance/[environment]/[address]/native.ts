@@ -20,7 +20,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     const { wallet } = getWallet(environment)
     const addressToQuery = getAddress(address)
 
+    const start = Date.now()
     const balance = utils.formatEther(await wallet.provider.getBalance(addressToQuery))
+    const end = Date.now()
+    const timeElapsed = end - start
+    console.log(`Fetched native balance for ${addressToQuery} in ${timeElapsed}ms`)
 
     if (text) return res.status(200).send(balance)
     return res.status(200).json({ balance })
