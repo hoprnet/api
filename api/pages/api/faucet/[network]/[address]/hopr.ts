@@ -1,4 +1,4 @@
-import { providers, Wallet, utils, errors, Contract } from 'ethers'
+import { utils, errors } from 'ethers'
 import type { NextApiRequest, NextApiResponse } from 'next'
 import { DEFAULT_HOPR_FUNDING_VALUE } from '../../../../../utils/hopr'
 import { getAddress, getWallet, getLockedTransaction, performTransaction } from '../../../../../utils/wallet'
@@ -11,13 +11,13 @@ type BalanceDataResponse = {
 export default async function handler(req: NextApiRequest, res: NextApiResponse<BalanceDataResponse | string>) {
   const {
     method,
-    query: { address, environment, text }
+    query: { network, address, text }
   } = req
 
   if (method != 'POST') return res.status(405).json({ err: 'Only POST method allowed' })
 
   try {
-    const { wallet, hoprTokenContract } = getWallet(environment)
+    const { wallet, hoprTokenContract } = getWallet(network)
     const addressToFund = getAddress(address)
 
     const faucetTx = await hoprTokenContract?.populateTransaction.transfer(
