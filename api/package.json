@@ -1,11 +1,11 @@
 {
   "name": "api",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "private": true,
   "scripts": {
-    "download:environment": "npx node-wget https://raw.githubusercontent.com/hoprnet/hoprnet/master/packages/core/protocol-config.json",
+    "download:protocol-config": "npx node-wget https://raw.githubusercontent.com/hoprnet/hoprnet/master/packages/core/protocol-config.json",
     "dev": "npx next dev",
-    "build": "npm run download:environment && npx next build",
+    "build": "npm run download:protocol-config && npx next build",
     "start": "npx next start",
     "lint": "npx next lint && npx prettier --write ."
   },
@@ -18,6 +18,7 @@
   },
   "devDependencies": {
     "@types/ioredis": "4.28.10",
+    "@types/node": "20.3.1",
     "@types/react": "17.0.47",
     "eslint": "8.22.0",
     "eslint-config-next": "12.2.5",
