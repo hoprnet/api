@@ -14,13 +14,13 @@ type BalanceDataResponse = {
 export default async function handler(req: NextApiRequest, res: NextApiResponse<BalanceDataResponse | string>) {
   const {
     method,
-    query: { network, text }
+    query: { environment, text }
   } = req
 
   if (method != 'GET') return res.status(405).json({ err: 'Only GET method allowed' })
 
   try {
-    const { wallet, hoprTokenContract } = getWallet(network)
+    const { wallet, hoprTokenContract } = getWallet(environment)
     const address = await wallet.getAddress()
 
     const native = utils.formatEther(await wallet.getBalance())
