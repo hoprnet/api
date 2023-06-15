@@ -4,7 +4,7 @@ import Redis from 'ioredis'
 import type { Signer } from '@ethersproject/abstract-signer'
 import type { TransactionRequest, TransactionReceipt } from '@ethersproject/abstract-provider'
 
-import { isValidEnvironment, isValidNetwork, getEnvironment, getNetwork } from './protocol'
+import { isValidNetwork, isValidChain, getNetwork, getChain } from './protocol'
 
 const { FAUCET_REDIS_URL, FAUCET_RPC_PROVIDER, FAUCET_SECRET_WALLET_PK } = process.env
 
@@ -17,29 +17,29 @@ export function getAddress(address?: string | string[]) {
   throw new Error("Missing parameter 'address'")
 }
 
-export function getWallet(environment?: string | string[]) {
+export function getWallet(networkName?: string | string[]) {
   let providerUrl = FAUCET_RPC_PROVIDER
-  let environmentConfig
+  let networkConfig
   let hoprTokenContract
 
-  if (environment) {
-    const actualEnvironment = environment instanceof Array ? environment[0] : environment
-    environmentConfig = getEnvironment(actualEnvironment)
-    const network = environmentConfig.network_id
+  if (networkName) {
+    const actualNetwork = networkName instanceof Array ? networkName[0] : networkName
+    networkConfig = getNetwork(actualNetwork)
+    const chain = networkConfig.chain
 
-    if (!isValidNetwork(network)) {
-      throw new Error('invalid environment')
+    if (!isValidChain(chain)) {
+      throw new Error('invalid chain')
     }
 
-    const networkConfig = getNetwork(network)
-    providerUrl = networkConfig.default_provider
+    const chainConfig = getChain(chain)
+    providerUrl = chainConfig.default_provider
   }
 
   const provider = new providers.StaticJsonRpcProvider(providerUrl)
   const wallet = new Wallet(FAUCET_SECRET_WALLET_PK as string, provider)
 
-  if (environmentConfig) {
-    const tokenAddressContract = environmentConfig.token_contract_address
+  if (networkConfig) {
+    const tokenAddressContract = networkConfig.token_contract_address
     const abi = [
       'function transfer(address to, uint amount) returns (bool)',
       'function balanceOf(address) view returns (uint)'
