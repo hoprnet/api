@@ -1,7 +1,6 @@
-import { providers, Wallet, utils, errors } from 'ethers'
+import { utils, errors } from 'ethers'
 import type { NextApiRequest, NextApiResponse } from 'next'
-import { DEFAULT_NATIVE_FUNDING_VALUE_IN_ETH } from '../../../../../utils/hopr'
-import { getAddress, getWallet, getLockedTransaction } from '../../../../../utils/wallet'
+import { getAddress, getWallet } from '../../../../../utils/wallet'
 
 type BalanceDataResponse = {
   balance?: string
@@ -11,13 +10,13 @@ type BalanceDataResponse = {
 export default async function handler(req: NextApiRequest, res: NextApiResponse<BalanceDataResponse | string>) {
   const {
     method,
-    query: { address, environment, text }
+    query: { network, address, text }
   } = req
 
   if (method != 'GET') return res.status(405).json({ err: 'Only GET method allowed' })
 
   try {
-    const { wallet } = getWallet(environment)
+    const { wallet } = getWallet(network)
     const addressToQuery = getAddress(address)
 
     const start = Date.now()
