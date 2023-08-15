@@ -6,7 +6,7 @@ import type { TransactionRequest, TransactionReceipt } from '@ethersproject/abst
 
 import { isValidNetwork, isValidChain, getNetwork, getChain } from './protocol'
 
-const { FAUCET_REDIS_URL, FAUCET_RPC_PROVIDER, FAUCET_SECRET_WALLET_PK } = process.env
+const { REDIS_URL, FAUCET_RPC_PROVIDER, FAUCET_SECRET_WALLET_PK } = process.env
 
 export function getAddress(address?: string | string[]) {
   if (address) {
@@ -100,7 +100,7 @@ export const getLockedTransaction = async (transaction: providers.TransactionReq
   }
   console.log('Acquiring locked tx')
   const start = Date.now()
-  const client = new Redis(FAUCET_REDIS_URL as string)
+  const client = new Redis(REDIS_URL as string)
   const address = await wallet.getAddress()
   const network = await wallet.provider?.getNetwork()
   const key = `${address}-${network?.name}`

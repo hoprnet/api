@@ -1,10 +1,10 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
-const { FAUCET_REDIS_URL, FAUCET_SECRET_API_KEY, FAUCET_SECRET_WALLET_PK, FAUCET_RPC_PROVIDER } = process.env
+const { REDIS_URL, FAUCET_SECRET_API_KEY, FAUCET_SECRET_WALLET_PK, FAUCET_RPC_PROVIDER } = process.env
 
 export function middleware(req: NextRequest) {
-  if (!FAUCET_REDIS_URL) {
+  if (!REDIS_URL) {
     return NextResponse.rewrite(new URL('/api/error/db-not-configured', req.url))
   }
 
