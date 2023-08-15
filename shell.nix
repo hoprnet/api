@@ -17,8 +17,8 @@ mkShell {
     ## base
     envsubst
 
-    nodejs-16_x # v16.5.0
-    (yarn.override { nodejs = nodejs-16_x; }) # v1.22.10
+    nodejs-18_x # v18.17.1
+    (yarn.override { nodejs = nodejs-18_x; }) # v1.22.10
 
     # custom pkg groups
     macosPkgs

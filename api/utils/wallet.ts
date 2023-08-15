@@ -39,7 +39,7 @@ export function getWallet(networkName?: string | string[]) {
   const wallet = new Wallet(FAUCET_SECRET_WALLET_PK as string, provider)
 
   if (networkConfig) {
-    const tokenAddressContract = networkConfig.token_contract_address
+    const tokenAddressContract = networkConfig.addresses.token
     const abi = [
       'function transfer(address to, uint amount) returns (bool)',
       'function balanceOf(address) view returns (uint)'
